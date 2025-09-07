@@ -6,9 +6,9 @@
 
 variable "role_info" {
   type = object({
-    team = string
+    team        = string
     environment = optional("dev", "staging", "prod")
-    purpose = string 
+    purpose     = string
   })
 
   description = "role info, from this info it will be generated the role name"
@@ -20,27 +20,43 @@ variable "assume_principals" {
   description = "list of principals that can assume the role"
 }
 
-variable "allowed_actions" {
-  type = list(string)
-
-  description = "list of allowed actions the role can perform on resources"
-}
-
-variable "resource_arns" {
-  type = list(string)
-
-  description = "list of resources the role can perform actions on"
-  
-}
-
-variable "conditions" {
+variable "policy_statements" {
   type = map(object({
-    key = string
-    value = list(string)
+    allowed_actions = list(stirng)
+    resource_arns   = list(string)
+    conditions = optional(
+      map(list(object({
+        key   = string
+        value = any
+      }))),
+      {}
+    )
   }))
 
-  default = {}
-
-  description = "map of conditions to apply to the role policy"
-
+  description = "statements config for the managed role policy to be created"
 }
+
+# variable "allowed_actions" {
+#   type = list(string)
+
+#   description = "list of allowed actions the role can perform on resources"
+# }
+
+# variable "resource_arns" {
+#   type = list(string)
+
+#   description = "list of resources the role can perform actions on"
+
+# }
+
+# variable "conditions" {
+#   type = map(object({
+#     key   = string
+#     value = list(string)
+#   }))
+
+#   default = {}
+
+#   description = "map of conditions to apply to the role policy"
+
+# }
