@@ -7,11 +7,18 @@
 variable "role_info" {
   type = object({
     team        = string
-    environment = optional("dev", "staging", "prod")
+    environment = string
     purpose     = string
   })
 
   description = "role info, from this info it will be generated the role name"
+
+  validation {
+    condition     = contains(["dev", "staging", "prod"], var.role_info.environment)
+    error_message = <<-EOT
+    Invalid environment. Must be one of "dev", "staging", or "prod".
+    EOT
+  }
 }
 
 variable "assume_principals" {
@@ -22,41 +29,24 @@ variable "assume_principals" {
 
 variable "policy_statements" {
   type = map(object({
-    allowed_actions = list(stirng)
+    allowed_actions = list(string)
     resource_arns   = list(string)
     conditions = optional(
       map(list(object({
-        key   = string
-        value = any
+        variable           = string
+        variable_condition = list(string)
       }))),
       {}
     )
   }))
 
   description = "statements config for the managed role policy to be created"
+
+    validation {
+    condition = alltrue ([
+      for statement in values(var.policy_statements) : 
+        can([for action in statement.allowed_actions : regex("^[\\w\\-:*]+$", action)])
+    ])
+    error_message = "All actions must be valid IAM action patterns."
+  }
 }
-
-# variable "allowed_actions" {
-#   type = list(string)
-
-#   description = "list of allowed actions the role can perform on resources"
-# }
-
-# variable "resource_arns" {
-#   type = list(string)
-
-#   description = "list of resources the role can perform actions on"
-
-# }
-
-# variable "conditions" {
-#   type = map(object({
-#     key   = string
-#     value = list(string)
-#   }))
-
-#   default = {}
-
-#   description = "map of conditions to apply to the role policy"
-
-# }

@@ -4,9 +4,11 @@ data "aws_iam_policy_document" "assume_role_policy" {
 
     dynamic "principals" {
       for_each = var.assume_principals
+      iterator = principal_config
+
       content {
-        type        = each.key
-        identifiers = each.value
+        type        = principal_config.key
+        identifiers = principal_config.value
       }
     }
   }
@@ -23,3 +25,38 @@ resource "aws_iam_role" "this" {
     Purpose     = var.role_info.purpose
   }
 }
+
+data "aws_iam_policy_document" "managed_role_policy" {
+
+  dynamic "statement" {
+    for_each = var.policy_statements
+    iterator = statement_config
+
+    content {
+      sid       = statement_config.key
+      actions   = statement_config.value.allowed_actions
+      resources = statement_config.value.resource_arns
+      effect    = "Allow"
+
+      dynamic "condition" {
+        for_each = flatten([
+          for condition_test, condition_list in statement_config.value.conditions : [
+            for condition in condition_list : {
+              test                = condition_test
+              variable          = condition.variable
+              values = condition.variable_condition
+            }
+          ]
+        ])
+
+        content {
+          test = condition.value.test
+          variable = condition.value.variable
+          values   = condition.value.values
+        }
+      }
+    }
+  }
+
+}
+
