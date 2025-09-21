@@ -26,7 +26,7 @@ resource "aws_iam_role" "this" {
   }
 }
 
-data "aws_iam_policy_document" "managed_role_policy" {
+data "aws_iam_policy_document" "this" {
 
   dynamic "statement" {
     for_each = var.policy_statements
@@ -60,3 +60,13 @@ data "aws_iam_policy_document" "managed_role_policy" {
 
 }
 
+resource "aws_iam_policy" "this" {
+  name        = replace("${var.role_info.team}-${var.role_info.environment}-policy", "_", "-")
+  description = "Managed policy for ${var.role_info.team} in ${var.role_info.environment}"
+  policy      = data.aws_iam_policy_document.this.json
+}
+
+resource "aws_iam_role_policy_attachment" "this" {
+  role       = aws_iam_role.this.name
+  policy_arn = aws_iam_policy.this.arn
+}
